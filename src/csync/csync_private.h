@@ -38,6 +38,7 @@
 #include <stdbool.h>
 #include <sqlite3.h>
 #include <map>
+#include <set>
 
 #include "common/syncjournaldb.h"
 #include "config_csync.h"
@@ -189,6 +190,9 @@ struct OCSYNC_EXPORT csync_s {
    * Specify if it is allowed to read the remote tree from the DB (default to enabled)
    */
   bool read_remote_from_db = false;
+
+  bool read_local_from_db = false;
+  std::set<QByteArray> locally_touched_files;
 
   bool ignore_hidden_files = true;
 

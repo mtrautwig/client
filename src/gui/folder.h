@@ -338,6 +338,7 @@ private:
     QString _lastEtag;
     QElapsedTimer _timeSinceLastSyncDone;
     QElapsedTimer _timeSinceLastSyncStart;
+    QElapsedTimer _timeSinceLastFullLocalDiscovery;
     qint64 _lastSyncDuration;
 
     /// The number of syncs that failed in a row.

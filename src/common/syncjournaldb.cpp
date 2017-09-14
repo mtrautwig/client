@@ -550,7 +550,7 @@ bool SyncJournalDb::checkConnect()
     _getFilesBelowPathQuery.reset(new SqlQuery(_db));
     if (_getFilesBelowPathQuery->prepare(
             GET_FILE_RECORD_QUERY
-            " WHERE path > (?1||'/') AND path < (?1||'0') ORDER BY path||'/' ASC")) {
+            " WHERE ?1 == '' OR (path > (?1||'/') AND path < (?1||'0')) ORDER BY path||'/' ASC")) {
         return sqlFail("prepare _getFilesBelowPathQuery", *_getFilesBelowPathQuery);
     }
 

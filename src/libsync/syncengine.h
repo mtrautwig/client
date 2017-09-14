@@ -25,6 +25,7 @@
 #include <QMap>
 #include <QStringList>
 #include <QSharedPointer>
+#include <set>
 
 #include <csync.h>
 
@@ -98,6 +99,9 @@ public:
      * too young and possibly still changing
      */
     static qint64 minimumFileAgeForUpload; // in ms
+
+    std::set<QByteArray> _locallyModifiedFiles;
+    bool _allowSkippingLocalDiscovery = true;
 
 signals:
     void csyncUnavailable();

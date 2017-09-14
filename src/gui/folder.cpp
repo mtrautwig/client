@@ -453,7 +453,6 @@ void Folder::slotWatchedPathChanged(const QString &path)
 // and log. Therefore we check notifications against operations
 // the sync is doing to filter out our own changes.
 #ifdef Q_OS_MAC
-    Q_UNUSED(path)
 // On OSX the folder watcher does not report changes done by our
 // own process. Therefore nothing needs to be done here!
 #else
@@ -464,9 +463,10 @@ void Folder::slotWatchedPathChanged(const QString &path)
     }
 #endif
 
-    // Check that the mtime actually changed.
     if (path.startsWith(this->path())) {
         auto relativePath = path.mid(this->path().size());
+
+        // Check that the mtime actually changed.
         SyncJournalFileRecord record;
         if (_journal.getFileRecord(relativePath, &record)
             && record.isValid()
@@ -474,6 +474,8 @@ void Folder::slotWatchedPathChanged(const QString &path)
             qCInfo(lcFolder) << "Ignoring spurious notification for file" << relativePath;
             return; // probably a spurious notification
         }
+
+        _engine->_locallyModifiedFiles.insert(relativePath.toUtf8());
     }
 
     emit watchedFileChangedExternally(path);
@@ -645,6 +647,15 @@ void Folder::startSync(const QStringList &pathList)
     setDirtyNetworkLimits();
     setSyncOptions();
 
+    if (_timeSinceLastFullLocalDiscovery.isValid()
+        && _timeSinceLastFullLocalDiscovery.elapsed() < 60*1000) {
+        qCInfo(lcFolder) << "Allowing local discovery to read from the database";
+        _engine->_allowSkippingLocalDiscovery = true;
+    } else {
+        qCInfo(lcFolder) << "Forbidding local discovery to read from the database";
+        _engine->_allowSkippingLocalDiscovery = false;
+    }
+
     _engine->setIgnoreHiddenFiles(_definition.ignoreHiddenFiles);
 
     QMetaObject::invokeMethod(_engine.data(), "startSync", Qt::QueuedConnection);
@@ -781,6 +792,17 @@ void Folder::slotSyncFinished(bool success)
     if (_syncResult.status() == SyncResult::Success && success) {
         // Clear the white list as all the folders that should be on that list are sync-ed
         journalDb()->setSelectiveSyncList(SyncJournalDb::SelectiveSyncWhiteList, QStringList());
+    }
+
+    // bug: This function uses many different criteria for "sync was successful" - investigate!
+    if (_syncResult.status() == SyncResult::Success
+        || _syncResult.status() == SyncResult::Problem) {
+        if (_engine->_allowSkippingLocalDiscovery) {
+            // bug: is it fully correct to wipe this on "Problem"?
+            _engine->_locallyModifiedFiles.clear();
+        } else {
+            _timeSinceLastFullLocalDiscovery.start();
+        }
     }
 
     emit syncStateChange();

@@ -30,6 +30,7 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
+#include <QDebug>
 
 #include "c_lib.h"
 
@@ -435,7 +436,8 @@ static bool fill_tree_from_db(CSYNC *ctx, const char *uri)
 {
     int64_t count = 0;
     QByteArray skipbase;
-    auto rowCallback = [ctx, &count, &skipbase](const OCC::SyncJournalFileRecord &rec) {
+    auto &files = ctx->current == LOCAL_REPLICA ? ctx->local.files : ctx->remote.files;
+    auto rowCallback = [ctx, &count, &skipbase, &files](const OCC::SyncJournalFileRecord &rec) {
         /* When selective sync is used, the database may have subtrees with a parent
          * whose etag (md5) is _invalid_. These are ignored and shall not appear in the
          * remote tree.
@@ -477,7 +479,7 @@ static bool fill_tree_from_db(CSYNC *ctx, const char *uri)
         }
 
         /* store into result list. */
-        ctx->remote.files[rec._path] = std::move(st);
+        files[rec._path] = std::move(st);
         ++count;
     };
 
@@ -522,6 +524,28 @@ int csync_ftw(CSYNC *ctx, const char *uri, csync_walker_fn fn,
   int rc = 0;
 
   bool do_read_from_db = (ctx->current == REMOTE_REPLICA && ctx->remote.read_from_db);
+  const char *db_uri = uri;
+
+  if (ctx->current == LOCAL_REPLICA && ctx->read_local_from_db) {
+      const char *local_uri = uri + strlen(ctx->local.uri);
+      if (*local_uri == '/')
+          ++local_uri;
+      db_uri = local_uri;
+      do_read_from_db = true;
+
+      // minor bug: local_uri probably doesn't have a trailing /, so when "/foo a" was modified and we want
+      // to check whether we should read "/foo" from the db, this function will say: no! it was modified!
+      auto it = ctx->locally_touched_files.lower_bound(QByteArray(local_uri));
+      if (it != ctx->locally_touched_files.end() && it->startsWith(local_uri)) {
+          do_read_from_db = false;
+      }
+
+      if (do_read_from_db) {
+          qDebug() << "ZZZ reading" << local_uri << "from database";
+      } else {
+          qDebug() << "ZZZ reading" << local_uri << "NOT from database";
+      }
+  }
 
   if (!depth) {
     mark_current_item_ignored(ctx, previous_fs, CSYNC_STATUS_INDIVIDUAL_TOO_DEEP);
@@ -533,7 +557,7 @@ int csync_ftw(CSYNC *ctx, const char *uri, csync_walker_fn fn,
   // if the etag of this dir is still the same, its content is restored from the
   // database.
   if( do_read_from_db ) {
-      if( ! fill_tree_from_db(ctx, uri) ) {
+      if( ! fill_tree_from_db(ctx, db_uri) ) {
         errno = ENOENT;
         ctx->status_code = CSYNC_STATUS_OPENDIR_ERROR;
         goto error;

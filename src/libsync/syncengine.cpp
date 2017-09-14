@@ -814,6 +814,9 @@ void SyncEngine::startSync()
 
     _csync_ctx->read_remote_from_db = true;
 
+    _csync_ctx->read_local_from_db = _allowSkippingLocalDiscovery;
+    _csync_ctx->locally_touched_files = _locallyModifiedFiles;
+
     bool ok;
     auto selectiveSyncBlackList = _journal->getSelectiveSyncList(SyncJournalDb::SelectiveSyncBlackList, &ok);
     if (ok) {

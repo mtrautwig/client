@@ -314,6 +314,9 @@ int csync_s::reinitialize() {
   local.files.clear();
   remote.files.clear();
 
+  read_local_from_db = false;
+  locally_touched_files.clear();
+
   status = CSYNC_STATUS_INIT;
   SAFE_FREE(error_string);
 
