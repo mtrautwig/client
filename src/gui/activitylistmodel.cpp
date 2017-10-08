@@ -123,6 +123,10 @@ void ActivityListModel::startFetchJob(AccountState *s)
     if (!s->isConnected()) {
         return;
     }
+
+    emit activityJobStatusCode(s, 999);
+
+    /* FIXME not supported for plain WebDAV
     JsonApiJob *job = new JsonApiJob(s->account(), QLatin1String("ocs/v1.php/cloud/activity"), this);
     QObject::connect(job, &JsonApiJob::jsonReceived,
         this, &ActivityListModel::slotActivitiesReceived);
@@ -136,6 +140,7 @@ void ActivityListModel::startFetchJob(AccountState *s)
     _currentlyFetching.insert(s);
     qCInfo(lcActivity) << "Start fetching activities for " << s->account()->displayName();
     job->start();
+    */
 }
 
 void ActivityListModel::slotActivitiesReceived(const QJsonDocument &json, int statusCode)

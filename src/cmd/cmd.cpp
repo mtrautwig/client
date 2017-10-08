@@ -426,6 +426,7 @@ int main(int argc, char **argv)
     account->setSslErrorHandler(sslErrorHandler);
 
     //obtain capabilities using event loop
+    /* FIXME WebDAV - not available for plain WebDAV
     QEventLoop loop;
 
     JsonApiJob *job = new JsonApiJob(account, QLatin1String("ocs/v1.php/cloud/capabilities"));
@@ -444,6 +445,7 @@ int main(int argc, char **argv)
         std::cout<<"Error connecting to server\n";
         return EXIT_FAILURE;
     }
+    */
 
     // much lower age than the default since this utility is usually made to be run right after a change in the tests
     SyncEngine::minimumFileAgeForUpload = 0;

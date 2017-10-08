@@ -247,10 +247,20 @@ void ConnectionValidator::slotAuthSuccess()
 
 void ConnectionValidator::checkServerCapabilities()
 {
-    JsonApiJob *job = new JsonApiJob(_account, QLatin1String("ocs/v1.php/cloud/capabilities"), this);
-    job->setTimeout(timeoutToUseMsec);
-    QObject::connect(job, &JsonApiJob::jsonReceived, this, &ConnectionValidator::slotCapabilitiesRecieved);
-    job->start();
+    // plain WebDAV server - skip all OCC extensions
+    auto caps = QJsonObject({
+        {"dav", QJsonObject({
+            {"plain", true}
+        })}
+    });
+
+    _account->setCapabilities(caps.toVariantMap());
+    reportResult(Connected);
+
+    //JsonApiJob *job = new JsonApiJob(_account, QLatin1String("ocs/v1.php/cloud/capabilities"), this);
+    //job->setTimeout(timeoutToUseMsec);
+    //QObject::connect(job, &JsonApiJob::jsonReceived, this, &ConnectionValidator::slotCapabilitiesRecieved);
+    //job->start();
 }
 
 void ConnectionValidator::slotCapabilitiesRecieved(const QJsonDocument &json)
@@ -265,7 +275,7 @@ void ConnectionValidator::slotCapabilitiesRecieved(const QJsonDocument &json)
         return;
     }
 
-    fetchUser();
+    fetchUser();    
 }
 
 void ConnectionValidator::fetchUser()

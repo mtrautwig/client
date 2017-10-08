@@ -326,6 +326,9 @@ static std::unique_ptr<csync_file_stat_t> propertyMapToFileStat(const QMap<QStri
 {
     std::unique_ptr<csync_file_stat_t> file_stat(new csync_file_stat_t);
 
+    // all permissions in case the server does not report any
+    file_stat->remotePerm = RemotePermissions("WDNVCK");
+    
     for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
         QString property = it.key();
         QString value = it.value();

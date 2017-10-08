@@ -274,6 +274,33 @@ protected:
 /**
  * @ingroup libsync
  *
+ * Propagation job, impementing no resuming/chunking to be compatible with WebDAV
+ *
+ */
+class PropagateUploadFileDAV : public PropagateUploadFileCommon
+{
+    Q_OBJECT
+
+private:
+    int _transferId; /// transfer id (part of the url)
+
+public:
+    PropagateUploadFileDAV(OwncloudPropagator *propagator, const SyncFileItemPtr &item)
+        : PropagateUploadFileCommon(propagator, item)
+    {
+    }
+
+    void doStartUpload() Q_DECL_OVERRIDE;
+
+private slots:
+    void startUpload();
+    void slotPutFinished();
+    void slotUploadProgress(qint64, qint64);
+};
+
+/**
+ * @ingroup libsync
+ *
  * Propagation job, impementing the old chunking agorithm
  *
  */

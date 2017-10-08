@@ -388,7 +388,9 @@ PropagateItemJob *OwncloudPropagator::createJob(const SyncFileItemPtr &item)
             return job;
         } else {
             PropagateUploadFileCommon *job = 0;
-            if (item->_size > syncOptions()._initialChunkSize && account()->capabilities().chunkingNg()) {
+            if (true) {
+                job = new PropagateUploadFileDAV(this, item);                
+            } else if (item->_size > syncOptions()._initialChunkSize && account()->capabilities().chunkingNg()) {
                 // Item is above _initialChunkSize, thus will be classified as to be chunked
                 job = new PropagateUploadFileNG(this, item);
             } else {

@@ -37,14 +37,13 @@ ownCloudTheme::ownCloudTheme()
 
 QString ownCloudTheme::configFileName() const
 {
-    return QLatin1String("owncloud.cfg");
+    return QLatin1String("davcloud.cfg");
 }
 
 QString ownCloudTheme::about() const
 {
     QString devString;
     devString = trUtf8("<p>Version %2. For more information visit <a href=\"%3\">https://%4</a></p>"
-                       "<p>For known issues and help, please visit: <a href=\"https://central.owncloud.org/c/desktop-client\">https://central.owncloud.org</a></p>"
                        "<p><small>By Klaas Freitag, Daniel Molkentin, Olivier Goffart, Markus Götz, "
                        " Jan-Christoph Borchardt, and others.</small></p>"
                        "<p>Copyright ownCloud GmbH</p>"
@@ -89,7 +88,7 @@ QVariant ownCloudTheme::customMedia(Theme::CustomMediaType type)
 
 QString ownCloudTheme::helpUrl() const
 {
-    return QString::fromLatin1("https://doc.owncloud.org/desktop/%1.%2/").arg(MIRALL_VERSION_MAJOR).arg(MIRALL_VERSION_MINOR);
+    return QString::fromLatin1("https://www.google.de/");
 }
 
 #ifndef TOKEN_AUTH_ONLY
@@ -112,11 +111,11 @@ QPixmap ownCloudTheme::wizardHeaderLogo() const
 
 QString ownCloudTheme::appName() const
 {
-    return QLatin1String("ownCloud");
+    return QLatin1String("WebDAV");
 }
 
 QString ownCloudTheme::appNameGUI() const
 {
-    return QLatin1String("ownCloud");
+    return QLatin1String("WebDAV");
 }
 }

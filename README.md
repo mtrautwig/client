@@ -1,59 +1,28 @@
-# ownCloud Desktop Client
-
-[![Build Status](https://jenkins.owncloud.org/buildStatus/icon?job=owncloud-client/client/master)](https://jenkins.owncloud.org/job/owncloud-client/job/client/job/master/)
+# WebDAV Synchronization Desktop Client
 
 ## Introduction
 
-The ownCloud Desktop Client is a tool to synchronize files from ownCloud Server
-with your computer.
+This is a desktop application to synchronizes files against plain WebDAV
+servers. It is a fork of the ownCloud Desktop Client, but it does not work
+against ownCloud servers. This application has been renamed, so you can use
+both clients at the same time.
 
-## Download
+## Restrictions
 
-### Binary packages
+You will miss at least the following features from ownCloud, as they are 
+not part of the WebDAV standards (even if your service provider may offer 
+these in their Browser-based UI):
 
-* Refer to the download page https://owncloud.org/install/#install-clients
-
-### Source code
-
-The ownCloud Desktop Client is developed in Git. Since Git makes it easy to
-fork and improve the source code and to adapt it to your need, many copies
-can be found on the Internet, in particular on GitHub. However, the
-authoritative repository maintained by the developers is located at
-https://github.com/owncloud/client.
+   * **Resumable uploads**. If uploads are aborted, they will restart from
+     the beginning. This will really hurt for large files.
+   * **Sharing**. Creating links for sharing files or folders is not
+     possible.
+   * **Activity and Notifications**. 
 
 ## Building the source code
 
-[Building the Client](http://doc.owncloud.org/desktop/2.3/building.html)
+See [Building the Client](http://doc.owncloud.org/desktop/2.3/building.html)
 in the ownCloud Desktop Client manual.
-
-## Maintainers and Contributors
-
-The maintainers of this repository are:
-
-* Klaas Freitag <freitag@owncloud.com>
-* Daniel Molkentin <danimo@owncloud.com>
-* Markus Goetz <guruz@owncloud.com>
-* Olivier Goffart <ogoffart@owncloud.com>
-
-ownCloud Desktop Client is developed by the ownCloud community and receives
-patches from a variety of authors.
-
-## Reporting issues and contributing
-
-If you find any bugs or have any suggestion for improvement, please
-file an issue at https://github.com/owncloud/client/issues. Do not
-contact the authors directly by mail, as this increases the chance
-of your report being lost.
-
-If you created a patch, please submit a [Pull
-Request](https://github.com/owncloud/client/pulls). For non-trivial
-patches, we need you to sign the [Contributor
-Agreement](https://owncloud.org/contribute/agreement) before
-we can accept your patch.
-
-If you want to contact us, e.g. before starting a more complex feature,
-you can join us at
-[#owncloud-client-dev](irc://irc.freenode.net/#owncloud-client-dev).
 
 ## License
 

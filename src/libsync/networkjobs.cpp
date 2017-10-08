@@ -209,6 +209,9 @@ bool LsColXMLParser::parse(const QByteArray &xml, QHash<QString, qint64> *sizes,
                 // We don't use URL encoding in our request URL (which is the expected path) (QNAM will do it for us)
                 // but the result will have URL encoding..
                 QString hrefString = QString::fromUtf8(QByteArray::fromPercentEncoding(reader.readElementText().toUtf8()));
+                if (!hrefString.endsWith("/")) {
+                    hrefString.append("/");
+                }
                 if (!hrefString.startsWith(expectedPath)) {
                     qCWarning(lcLsColJob) << "Invalid href" << hrefString << "expected starting with" << expectedPath;
                     return false;
@@ -360,7 +363,7 @@ bool LsColJob::finished()
 
     QString contentType = reply()->header(QNetworkRequest::ContentTypeHeader).toString();
     int httpCode = reply()->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    if (httpCode == 207 && contentType.contains("application/xml; charset=utf-8")) {
+    if (httpCode == 207 && (contentType.contains("application/xml; charset=utf-8") || contentType.contains("text/xml"))) {
         LsColXMLParser parser;
         connect(&parser, &LsColXMLParser::directoryListingSubfolders,
             this, &LsColJob::directoryListingSubfolders);
@@ -389,13 +392,8 @@ bool LsColJob::finished()
 
 /*********************************************************************************************/
 
-namespace {
-    const char statusphpC[] = "status.php";
-    const char owncloudDirC[] = "owncloud/";
-}
-
 CheckServerJob::CheckServerJob(AccountPtr account, QObject *parent)
-    : AbstractNetworkJob(account, QLatin1String(statusphpC), parent)
+    : AbstractNetworkJob(account, QLatin1String(""), parent)
     , _subdirFallback(false)
     , _permanentRedirects(0)
 {
@@ -407,7 +405,7 @@ CheckServerJob::CheckServerJob(AccountPtr account, QObject *parent)
 void CheckServerJob::start()
 {
     _serverUrl = account()->url();
-    sendRequest("GET", Utility::concatUrlPath(_serverUrl, path()));
+    sendRequest("OPTIONS", Utility::concatUrlPath(_serverUrl, path()));
     connect(reply(), &QNetworkReply::metaDataChanged, this, &CheckServerJob::metaDataChangedSlot);
     connect(reply(), &QNetworkReply::encrypted, this, &CheckServerJob::encryptedSlot);
     AbstractNetworkJob::start();
@@ -459,17 +457,13 @@ void CheckServerJob::encryptedSlot()
 
 void CheckServerJob::slotRedirected(QNetworkReply *reply, const QUrl &targetUrl, int redirectCount)
 {
-    QByteArray slashStatusPhp("/");
-    slashStatusPhp.append(statusphpC);
-
     int httpCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
     QString path = targetUrl.path();
     if ((httpCode == 301 || httpCode == 308) // permanent redirection
         && redirectCount == _permanentRedirects // don't apply permanent redirects after a temporary one
-        && path.endsWith(slashStatusPhp)) {
+        ) {
         _serverUrl = targetUrl;
-        _serverUrl.setPath(path.left(path.size() - slashStatusPhp.size()));
-        qCInfo(lcCheckServerJob) << "status.php was permanently redirected to"
+        qCInfo(lcCheckServerJob) << "permanently redirected to"
                                  << targetUrl << "new server url is" << _serverUrl;
         ++_permanentRedirects;
     }
@@ -492,37 +486,21 @@ bool CheckServerJob::finished()
 
     mergeSslConfigurationForSslButton(reply()->sslConfiguration(), account());
 
-    // The server installs to /owncloud. Let's try that if the file wasn't found
-    // at the original location
-    if ((reply()->error() == QNetworkReply::ContentNotFoundError) && (!_subdirFallback)) {
-        _subdirFallback = true;
-        setPath(QLatin1String(owncloudDirC) + QLatin1String(statusphpC));
-        start();
-        qCInfo(lcCheckServerJob) << "Retrying with" << reply()->url();
-        return false;
-    }
-
     QByteArray body = reply()->peek(4 * 1024);
     int httpStatus = reply()->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    if (body.isEmpty() || httpStatus != 200) {
-        qCWarning(lcCheckServerJob) << "error: status.php replied " << httpStatus << body;
-        emit instanceNotFound(reply());
-    } else {
-        QJsonParseError error;
-        auto status = QJsonDocument::fromJson(body, &error);
-        // empty or invalid response
-        if (error.error != QJsonParseError::NoError || status.isNull()) {
-            qCWarning(lcCheckServerJob) << "status.php from server is not valid JSON!" << body << reply()->request().url() << error.errorString();
-        }
-
-        qCInfo(lcCheckServerJob) << "status.php returns: " << status << " " << reply()->error() << " Reply: " << reply();
-        if (status.object().contains("installed")) {
-            emit instanceFound(_serverUrl, status.object());
+    if (httpStatus == 200 || httpStatus == 401) {
+        if (reply()->hasRawHeader("DAV") || httpStatus == 401) {
+            auto status = QJsonObject();
+            emit instanceFound(_serverUrl, status);    
         } else {
             qCWarning(lcCheckServerJob) << "No proper answer on " << reply()->url();
             emit instanceNotFound(reply());
         }
+    } else {
+        qCWarning(lcCheckServerJob) << "error: server replied " << httpStatus << body;
+        emit instanceNotFound(reply());
     }
+
     return true;
 }
 
